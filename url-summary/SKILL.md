@@ -13,22 +13,29 @@ Manage a persistent collection of URLs with timestamps. Collect new URLs from th
 
 ## Storage
 
-URLs are stored in a JSON file at `url-summary/urls.json` relative to the workspace root. See [storage.md](storage.md) for the full schema.
+URLs are stored in a SQLite database at `url-summary/urls.db` relative to the workspace root. See [storage.md](storage.md) for the full schema.
 
-Each entry contains:
+Each row in the `entries` table contains:
 
-```json
-{
-  "url": "https://example.com/article",
-  "title": "Optional title provided by user",
-  "added": "2026-04-20T14:30:00Z"
-}
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER | Auto-incrementing primary key |
+| `url` | TEXT NOT NULL UNIQUE | The full URL including protocol |
+| `title` | TEXT | Optional user-provided title (NULL if not given) |
+| `added` | TEXT NOT NULL | ISO-8601 UTC timestamp, e.g. `2026-04-20T14:30:00Z` |
 
-If the file does not exist, create it with an empty `entries` array:
+If the database does not exist, create it and initialize the schema:
 
-```json
-{ "entries": [] }
+```bash
+sqlite3 url-summary/urls.db <<'SQL'
+CREATE TABLE IF NOT EXISTS entries (
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    url   TEXT    NOT NULL UNIQUE,
+    title TEXT,
+    added TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_entries_added ON entries(added);
+SQL
 ```
 
 ## Workflow: Add URLs
@@ -42,10 +49,9 @@ Ask the user for one or more URLs. Accept them as a list, comma-separated, or on
 
 ### Step 2 — Persist
 
-1. Read the current `url-summary/urls.json` file (or create it if missing).
-2. Append each new URL as an entry with `added` set to the current UTC ISO-8601 timestamp.
-3. Write the updated JSON back to the file.
-4. Confirm to the user how many URLs were added and list them.
+1. Open the `url-summary/urls.db` database (or create it and run the schema if missing).
+2. Insert each new URL with `added` set to the current UTC ISO-8601 timestamp.
+3. Confirm to the user how many URLs were added and list them.
 
 ## Workflow: Summarize URLs
 
@@ -66,7 +72,7 @@ Options:
 
 If "Custom range", ask for start and end dates conversationally.
 
-Calculate the cutoff date from today's date and filter `urls.json` entries where `added` >= cutoff.
+Calculate the cutoff date from today's date and query `urls.db` for entries where `added >= cutoff`.
 
 ### Step 2 — Retrieve Content
 
@@ -114,5 +120,5 @@ If only one URL exists for a topic, still list it under its own heading.
 ## Edge Cases
 
 - **Empty collection**: If no URLs exist for the requested period, tell the user and suggest broadening the window.
-- **Duplicate URLs**: When adding, check if the URL already exists in the collection. If so, ask the user whether to update the timestamp or skip it.
+- **Duplicate URLs**: When adding, the UNIQUE constraint on `url` prevents duplicates. If an INSERT fails due to a duplicate, ask the user whether to update the timestamp or skip it.
 - **Large collections**: If more than 20 URLs match the time window, warn the user that retrieval may take a while and offer to limit to the most recent N.

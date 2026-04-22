@@ -18,7 +18,7 @@ Close the tabs. Keep the knowledge.
 
 ## What It Does
 
-- **Collect URLs** — Hand the agent one or more URLs and it stores them with a timestamp in a local JSON file.
+- **Collect URLs** — Hand the agent one or more URLs and it stores them with a timestamp in a local SQLite database.
 - **Summarize by time period** — Ask for a summary of your saved URLs from the last week, last month, last year, or a custom date range.
 - **Topic grouping** — The agent fetches each page, identifies topics, and groups URLs by theme in descending order from most covered to least.
 - **Trend spotting** — By reviewing summaries over different time windows, you can see which topics keep coming up and decide where to dig deeper.
@@ -33,7 +33,7 @@ Tell the agent you want to save some URLs:
 
 > "Add this link to my collection: https://example.com/interesting-post"
 
-The agent validates each URL, checks for duplicates, and appends them to `url-summary/urls.json` with the current date.
+The agent validates each URL, checks for duplicates, and inserts them into the `url-summary/urls.db` SQLite database with the current date.
 
 ### Reviewing and Summarizing
 
@@ -57,25 +57,24 @@ The agent will:
 ```
 url-summary/
 ├── SKILL.md       # Skill instructions for the Cursor agent
-├── storage.md     # JSON schema and storage rules reference
+├── storage.md     # SQLite schema and storage rules reference
 ├── README.md      # This file
-└── urls.json      # Your URL collection (created automatically on first use)
+└── urls.db        # Your URL collection (SQLite database, created automatically on first use)
 ```
 
 ## Storage Format
 
-URLs are stored in `urls.json` as a simple JSON array of entries:
+URLs are stored in `urls.db`, a SQLite database with a single `entries` table:
 
-```json
-{
-  "entries": [
-    {
-      "url": "https://example.com/article",
-      "title": "Optional title",
-      "added": "2026-04-20T14:30:00Z"
-    }
-  ]
-}
+```sql
+CREATE TABLE entries (
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    url   TEXT    NOT NULL UNIQUE,
+    title TEXT,
+    added TEXT    NOT NULL   -- ISO-8601 UTC timestamp
+);
+
+CREATE INDEX idx_entries_added ON entries(added);
 ```
 
 See [storage.md](storage.md) for the full schema and filtering rules.
