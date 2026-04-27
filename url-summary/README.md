@@ -18,9 +18,10 @@ Close the tabs. Keep the knowledge.
 
 ## What It Does
 
-- **Collect URLs** — Hand the agent one or more URLs and it stores them with a timestamp in a local SQLite database.
+- **Collect & Summarize URLs** — Hand the agent one or more URLs and it fetches each page, generates a concise summary, and stores everything with a timestamp in a local SQLite database.
+- **Instant recall** — Saved summaries mean you can review your collection without re-fetching every page. When you ask for a summary, the agent uses cached summaries by default and offers to refresh them from the web if you want the latest content.
 - **Summarize by time period** — Ask for a summary of your saved URLs from the last week, last month, last year, or a custom date range.
-- **Topic grouping** — The agent fetches each page, identifies topics, and groups URLs by theme in descending order from most covered to least.
+- **Topic grouping** — The agent identifies topics and groups URLs by theme in descending order from most covered to least.
 - **Trend spotting** — By reviewing summaries over different time windows, you can see which topics keep coming up and decide where to dig deeper.
 
 ## Usage
@@ -33,7 +34,7 @@ Tell the agent you want to save some URLs:
 
 > "Add this link to my collection: https://example.com/interesting-post"
 
-The agent validates each URL, checks for duplicates, and inserts them into the `url-summary/urls.db` SQLite database with the current date.
+The agent validates each URL, fetches the page to generate a summary, checks for duplicates, and inserts everything into the `url-summary/urls.db` SQLite database with the current date.
 
 ### Reviewing and Summarizing
 
@@ -48,7 +49,7 @@ Ask the agent to review what you've collected:
 The agent will:
 
 1. Filter your collection to the requested time period.
-2. Fetch and read each page.
+2. Ask whether you want to use saved summaries (fast) or fetch updated ones from the web.
 3. Identify topics and group the URLs.
 4. Present a summary ranked by topic frequency — most covered first.
 
@@ -68,10 +69,11 @@ URLs are stored in `urls.db`, a SQLite database with a single `entries` table:
 
 ```sql
 CREATE TABLE entries (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    url   TEXT    NOT NULL UNIQUE,
-    title TEXT,
-    added TEXT    NOT NULL   -- ISO-8601 UTC timestamp
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    url     TEXT    NOT NULL UNIQUE,
+    title   TEXT,
+    added   TEXT    NOT NULL,  -- ISO-8601 UTC timestamp
+    summary TEXT               -- Cached page summary
 );
 
 CREATE INDEX idx_entries_added ON entries(added);
