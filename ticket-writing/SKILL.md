@@ -106,7 +106,30 @@ Options:
 
 If editing, ask which section to change and re-gather that field.
 
-### Step 4: Output
+### Step 4: Sufficiency Review
+
+After the user approves the draft, perform a holistic review of the **entire** ticket before finalizing. The goal: **if this ticket were assigned to you, would you have enough information to start working on it without chasing down the author for clarification?**
+
+Evaluate the ticket against these questions silently:
+
+1. **Is the "what" clear?** — Can you state in one sentence exactly what needs to happen?
+2. **Is the "why" clear?** — Do you understand the motivation or user impact?
+3. **Is the scope bounded?** — Are there implicit assumptions, undefined terms, or ambiguous phrases that could lead to different interpretations?
+4. **Are edge cases or constraints mentioned?** — For bugs: can you actually reproduce it from what's written? For features/stories: do you know what's in scope and what's out?
+5. **Are the acceptance criteria verifiable?** — Could you demo or test each criterion without guessing what "done" means?
+
+If **any** of these fail, do **not** finalize. Instead:
+
+- Tell the user which areas are thin and **why** they need more detail (be specific — quote the vague part).
+- Ask targeted follow-up questions to fill the gaps (conversational, not multiple-choice).
+- After receiving answers, weave the new detail into the ticket and re-present the updated draft.
+- Repeat this review loop until the ticket passes all five checks.
+
+Only proceed to Step 5 once the ticket would be actionable by someone with no prior context.
+
+---
+
+### Step 5: Output
 
 Produce the final ticket in markdown. Offer:
 
